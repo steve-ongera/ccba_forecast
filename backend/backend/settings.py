@@ -39,7 +39,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "ccba_forecast.urls"
+ROOT_URLCONF = "backend.urls"
 
 TEMPLATES = [
     {
@@ -57,8 +57,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "ccba_forecast.wsgi.application"
-ASGI_APPLICATION = "ccba_forecast.asgi.application"
+WSGI_APPLICATION = "backend.wsgi.application"
+ASGI_APPLICATION = "backend.asgi.application"
 
 DATABASES = {
     "default": {
