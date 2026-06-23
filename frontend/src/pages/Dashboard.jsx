@@ -134,8 +134,8 @@ function KpiCard({ icon, label, value, trend, trendDir = "up", variant = "" }) {
           </span>
         )}
       </div>
-      <div className="kpi-card__label" style={{ fontFamily: FONT.body }}>{label}</div>
-      <div className="kpi-card__value" style={{ fontFamily: FONT.mono }}>{value}</div>
+      <div className="kpi-card__label">{label}</div>
+      <div className="kpi-card__value">{value}</div>
     </div>
   );
 }
@@ -172,22 +172,32 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, [period]);
 
-  if (loading) return (
-    <div className="spinner-wrap" style={{ minHeight: "60vh" }}>
-      <div className="spinner spinner--lg" />
-      <span style={{ fontFamily: FONT.body, color: C.textMuted }}>Crunching the numbers…</span>
-    </div>
-  );
-
-  if (error) return (
-    <div className="alert alert--critical" style={{ marginTop: "var(--sp-8)" }}>
-      <i className="bi bi-exclamation-triangle-fill alert__icon" />
-      <div className="alert__body">
-        <div className="alert__title">Unable to load dashboard</div>
-        {error}
+  if (loading) {
+    return (
+      <div className="app-loading">
+        <div className="spinner-wrap">
+          <div className="spinner spinner--lg" />
+          <span style={{ fontFamily: FONT.body, color: C.textMuted, marginTop: 'var(--sp-3)' }}>
+            Crunching the numbers…
+          </span>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page">
+        <div className="alert alert--critical" style={{ marginTop: "var(--sp-8)" }}>
+          <i className="bi bi-exclamation-triangle-fill alert__icon" />
+          <div className="alert__body">
+            <div className="alert__title">Unable to load dashboard</div>
+            {error}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   /* ── Data extraction ── */
   const totalSales     = Number(summary?.total_sales ?? 0);
@@ -229,21 +239,21 @@ export default function Dashboard() {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "12px 16px",
+    padding: "var(--sp-4) var(--sp-5)",
     borderBottom: `1px solid ${C.border}`,
   };
 
   const ptStyle = {
     fontFamily: FONT.display,
     fontWeight: 700,
-    fontSize: 14,
+    fontSize: 'var(--text-base)',
     color: C.text,
     letterSpacing: "0.02em",
   };
 
   const psStyle = {
     fontFamily: FONT.body,
-    fontSize: 11,
+    fontSize: 'var(--text-xs)',
     color: C.textMuted,
     marginTop: 2,
   };
@@ -252,7 +262,7 @@ export default function Dashboard() {
     <div className="page">
 
       {/* ── Page header ── */}
-      <div className="page__header page__header--with-action" style={{ marginBottom: "var(--sp-5)" }}>
+      <div className="page__header page__header--with-action">
         <div>
           <div className="page__header-eyebrow">Overview</div>
           <h1>Dashboard</h1>
@@ -261,29 +271,56 @@ export default function Dashboard() {
         <div className="page__header-actions">
           <div className="tabs--pill tabs" style={{ display: "inline-flex" }}>
             {["7d", "30d", "90d", "1y"].map((p) => (
-              <button key={p} className={`tab${period === p ? " is-active" : ""}`}
-                onClick={() => setPeriod(p)} style={{ fontFamily: FONT.body }}>{p}</button>
+              <button 
+                key={p} 
+                className={`tab${period === p ? " is-active" : ""}`}
+                onClick={() => setPeriod(p)} 
+                style={{ fontFamily: FONT.body }}
+              >
+                {p}
+              </button>
             ))}
           </div>
-          <button className="btn btn--secondary btn--sm" style={{ fontFamily: FONT.body }}>
-            <i className="bi bi-download" />Export
+          <button className="btn btn--secondary btn--sm">
+            <i className="bi bi-download" /> Export
           </button>
         </div>
       </div>
 
       {/* ══ ROW 1: KPIs ══ */}
-      <div className="kpi-grid" style={{ marginBottom: 16 }}>
-        <KpiCard icon="bi-cash-coin"         label="Total Sales (KES)"    value={`KES ${fmtKES(totalSales)}`}      trend={null} />
-        <KpiCard icon="bi-boxes"             label="Units Sold"            value={fmtComma(totalUnits)}              trend={null} trendDir="up" variant="success" />
-        <KpiCard icon="bi-grid-3x3-gap-fill" label="Active Products"       value={activeProducts}                    trend={null} trendDir="up" variant="info" />
-        <KpiCard icon="bi-bullseye"          label="Forecast Accuracy"     value={accuracyPct ? `${accuracyPct.toFixed(1)}%` : "—"}
+      <div className="kpi-grid">
+        <KpiCard 
+          icon="bi-cash-coin" 
+          label="Total Sales (KES)" 
+          value={`KES ${fmtKES(totalSales)}`} 
+          trend={null} 
+        />
+        <KpiCard 
+          icon="bi-boxes" 
+          label="Units Sold" 
+          value={fmtComma(totalUnits)} 
+          trend={null} 
+          variant="success" 
+        />
+        <KpiCard 
+          icon="bi-grid-3x3-gap-fill" 
+          label="Active Products" 
+          value={activeProducts} 
+          trend={null} 
+          variant="info" 
+        />
+        <KpiCard 
+          icon="bi-bullseye" 
+          label="Forecast Accuracy" 
+          value={accuracyPct ? `${accuracyPct.toFixed(1)}%` : "—"}
           trend={accuracyPct ? (accuracyPct >= 85 ? "On target" : "Below target") : null}
           trendDir={accuracyPct >= 85 ? "up" : "down"}
-          variant={accuracyPct >= 85 ? "success" : ""} />
+          variant={accuracyPct >= 85 ? "success" : ""} 
+        />
       </div>
 
       {/* ══ ROW 2: Sales trend (2/3) + Gauge (1/3) ══ */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12, marginBottom: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
 
         {/* Sales trend */}
         <div style={panelStyle}>
@@ -304,7 +341,7 @@ export default function Dashboard() {
                 ))}
             </div>
           </div>
-          <div style={{ padding: "14px 16px" }}>
+          <div style={{ padding: "var(--sp-4) var(--sp-5)" }}>
             {trendData.length === 0 ? <EmptyChart height={200} /> : (
               <ResponsiveContainer width="100%" height={200}>
                 <AreaChart data={trendData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
@@ -346,7 +383,7 @@ export default function Dashboard() {
           <div style={{
             flex: 1, display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
-            gap: 14, padding: "16px 20px",
+            gap: 14, padding: "var(--sp-4) var(--sp-5)",
           }}>
             <AccuracyGauge pct={accuracyPct} />
             <div style={{ width: "100%" }}>
@@ -372,7 +409,7 @@ export default function Dashboard() {
       </div>
 
       {/* ══ ROW 3: Left 2-col grid + Right table ══ */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 'var(--sp-4)', alignItems: "start" }}>
 
         {/* ── Regional bar chart ── */}
         <div style={panelStyle}>
@@ -382,7 +419,7 @@ export default function Dashboard() {
               <div style={psStyle}>Units sold by region</div>
             </div>
           </div>
-          <div style={{ padding: "14px 16px" }}>
+          <div style={{ padding: "var(--sp-4) var(--sp-5)" }}>
             {barData.length === 0 ? <EmptyChart height={180} /> : (
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={barData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barCategoryGap="28%">
@@ -409,7 +446,7 @@ export default function Dashboard() {
               <div style={psStyle}>Top SKUs by units</div>
             </div>
           </div>
-          <div style={{ padding: "14px 16px" }}>
+          <div style={{ padding: "var(--sp-4) var(--sp-5)" }}>
             {donutSrc.length === 0 ? <EmptyChart height={180} /> : (
               <>
                 <ResponsiveContainer width="100%" height={130}>
@@ -447,7 +484,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── Right column: Recommendations + Regional table ── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 'var(--sp-4)' }}>
 
           {/* AI Recommendations */}
           <div style={panelStyle}>
@@ -460,7 +497,7 @@ export default function Dashboard() {
                 All <i className="bi bi-arrow-right" />
               </a>
             </div>
-            <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ padding: "var(--sp-3) var(--sp-4)", display: "flex", flexDirection: "column", gap: 8 }}>
               {recs.length === 0 ? (
                 <div style={{ padding: "12px 0", textAlign: "center", color: C.textMuted, fontFamily: FONT.body, fontSize: 12 }}>
                   No recommendations at this time
@@ -522,8 +559,6 @@ export default function Dashboard() {
                     <tr><td colSpan={4} style={{ padding: 16, textAlign: "center", color: C.textMuted, fontFamily: FONT.body }}>No data</td></tr>
                   ) : barData.map((r, i) => {
                     const share = ((r.units / totalQty) * 100).toFixed(1);
-                    const statusCls = i < 2 ? "badge--success" : i === 2 ? "badge--warning" : "badge--default";
-                    const statusLbl = i < 2 ? "On track" : i === 2 ? "Review" : "Monitor";
                     return (
                       <tr key={r.name} style={{ borderBottom: `1px solid ${C.border}` }}>
                         <td style={{ padding: "9px 12px" }}>
