@@ -1,6 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import ccbaLogo from "../assets/ccbalogo.webp";
 
 const NAV_ITEMS = [
   { to: "/",               label: "Dashboard",       icon: "bi-grid-1x2-fill" },
@@ -20,7 +21,13 @@ export default function Sidebar({ collapsed, onClose }) {
     <aside className={`sidebar${collapsed ? " sidebar--collapsed" : ""}`}>
       {/* ---- Brand ---- */}
       <div className="sidebar__brand">
-        <div className="sidebar__brand-icon">CC</div>
+        <div className="sidebar__brand-icon">
+          <img 
+            src={ccbaLogo} 
+            alt="CCBA" 
+            className="sidebar__brand-logo"
+          />
+        </div>
         <div className="sidebar__brand-text">
           <span className="sidebar__brand-mark">CCBA</span>
           <span className="sidebar__brand-sub">Demand Forecast</span>
@@ -57,11 +64,12 @@ export default function Sidebar({ collapsed, onClose }) {
 
       {/* ---- Footer ---- */}
       <div className="sidebar__footer">
-        <div className="sidebar__footer-icon" aria-hidden="true">
+        <div className="sidebar__footer-avatar" aria-hidden="true">
           <i className="bi bi-person-fill" />
         </div>
         <div className="sidebar__footer-text">
-          <span className="sidebar__role-pill">{role || "guest"}</span>
+          <span className="sidebar__footer-name">User</span>
+          <span className="sidebar__footer-role">{role || "Guest"}</span>
         </div>
       </div>
     </aside>
