@@ -107,7 +107,7 @@ class ReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Report
         fields = "__all__"
-        read_only_fields = ["generated_by", "file_path", "created_at"]
+        read_only_fields = ["generated_by", "file_path", "status", "error_message", "created_at"]
 
 
 class DashboardSummarySerializer(serializers.Serializer):

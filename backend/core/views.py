@@ -203,21 +203,52 @@ class ReportViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["post"])
     def generate(self, request):
         """Generates a PDF or Excel report based on filters (product/region/date range)."""
-        from .reports import build_report  # implement PDF/Excel builder here
+        from .reports import build_report
 
         report_format = request.data.get("report_format", "pdf")
+        report_type = request.data.get("report_type", Report.ReportType.FORECAST)
         filters = request.data.get("filters", {})
         title = request.data.get("title", "Demand Forecast Report")
+        description = request.data.get("description", "")
 
-        file_path = build_report(report_format=report_format, filters=filters)
         report = Report.objects.create(
             title=title,
+            description=description,
             report_format=report_format,
+            report_type=report_type,
             generated_by=request.user,
-            file_path=file_path,
             filters=filters,
+            status=Report.Status.GENERATING,
         )
+
+        try:
+            file_path = build_report(report_format=report_format, filters=filters)
+            report.file_path = file_path
+            report.status = Report.Status.COMPLETED
+            report.save(update_fields=["file_path", "status"])
+        except Exception as exc:
+            report.status = Report.Status.FAILED
+            report.error_message = str(exc)
+            report.save(update_fields=["status", "error_message"])
+
         return Response(ReportSerializer(report).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["get"])
+    def download(self, request, pk=None):
+        """Streams the generated report file back to the client."""
+        from django.http import FileResponse, Http404
+        import os
+        from django.conf import settings as dj_settings
+
+        report = self.get_object()
+        if not report.file_path:
+            raise Http404("Report file not available.")
+
+        filepath = os.path.join(dj_settings.MEDIA_ROOT, report.file_path)
+        if not os.path.exists(filepath):
+            raise Http404("Report file not found on disk.")
+
+        return FileResponse(open(filepath, "rb"), as_attachment=True, filename=os.path.basename(filepath))
 
 
 # ---------------------------------------------------------------------------
