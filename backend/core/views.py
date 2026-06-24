@@ -227,41 +227,88 @@ class DashboardSummaryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        from django.db.models.functions import TruncMonth
+
         today = timezone.now().date()
         last_30 = today - timedelta(days=30)
+        last_12_months = today - timedelta(days=365)
 
         sales_qs = Sale.objects.filter(sales_date__gte=last_30)
         total_sales = sales_qs.aggregate(total=Sum(F("quantity_sold") * F("unit_price")))["total"] or 0
         total_units = sales_qs.aggregate(total=Sum("quantity_sold"))["total"] or 0
         active_products = Product.objects.filter(is_active=True).count()
 
-        avg_accuracy = ForecastModel.objects.filter(is_active=True).aggregate(
-            avg=Avg("accuracy_pct")
-        )["avg"]
+        active_model = ForecastModel.objects.filter(is_active=True).order_by("-trained_on").first()
+        avg_accuracy = active_model.accuracy_pct if active_model else None
 
-        demand_trend = (
-            sales_qs.values("sales_date")
-            .annotate(total_qty=Sum("quantity_sold"))
-            .order_by("sales_date")
+        # ---- Monthly demand trend: actual sales vs forecast (last 12 months + forward forecasts) ----
+        monthly_actual = (
+            Sale.objects.filter(sales_date__gte=last_12_months)
+            .annotate(month=TruncMonth("sales_date"))
+            .values("month")
+            .annotate(actual=Sum("quantity_sold"))
+            .order_by("month")
         )
+        monthly_forecast = (
+            Forecast.objects.filter(forecast_date__gte=last_12_months)
+            .annotate(month=TruncMonth("forecast_date"))
+            .values("month")
+            .annotate(forecast=Sum("predicted_demand"))
+            .order_by("month")
+        )
+        trend_map = {}
+        for row in monthly_actual:
+            key = row["month"].strftime("%b %Y")
+            trend_map[key] = {"month": key, "actual": float(row["actual"] or 0), "forecast": None}
+        for row in monthly_forecast:
+            key = row["month"].strftime("%b %Y")
+            trend_map.setdefault(key, {"month": key, "actual": None, "forecast": None})
+            trend_map[key]["forecast"] = float(row["forecast"] or 0)
+        demand_trend = sorted(trend_map.values(), key=lambda r: r["month"])
 
+        # ---- Regional performance ----
         regional_performance = (
             sales_qs.values("region__name")
             .annotate(total_qty=Sum("quantity_sold"), total_rev=Sum(F("quantity_sold") * F("unit_price")))
             .order_by("-total_rev")
         )
 
+        # ---- Top products by units sold (last 30 days) ----
+        top_products = (
+            sales_qs.values("product__name")
+            .annotate(units=Sum("quantity_sold"))
+            .order_by("-units")[:5]
+        )
+        top_products = [{"name": p["product__name"], "units": p["units"]} for p in top_products]
+
         recent_recommendations = Recommendation.objects.select_related("product", "region").order_by(
             "-created_at"
         )[:10]
+
+        # ---- Model error stats (from active model + recent forecast deviations) ----
+        mape = None
+        bias = None
+        if active_model and active_model.mae is not None:
+            recent_avg_qty = sales_qs.aggregate(avg=Avg("quantity_sold"))["avg"] or 0
+            mape = (active_model.mae / recent_avg_qty * 100) if recent_avg_qty else None
+
+        evaluated = Forecast.objects.filter(actual_demand__isnull=False)
+        if evaluated.exists():
+            deviations = [f.deviation_pct for f in evaluated if f.deviation_pct is not None]
+            if deviations:
+                bias = sum(deviations) / len(deviations)
 
         data = {
             "total_sales": total_sales,
             "total_units_sold": total_units,
             "active_products": active_products,
             "forecast_accuracy_pct": avg_accuracy,
-            "demand_trend": list(demand_trend),
+            "demand_trend": demand_trend,
             "regional_performance": list(regional_performance),
+            "top_products": top_products,
             "recent_recommendations": RecommendationSerializer(recent_recommendations, many=True).data,
+            "mape": mape,
+            "rmse": active_model.rmse if active_model else None,
+            "bias": bias,
         }
         return Response(data)

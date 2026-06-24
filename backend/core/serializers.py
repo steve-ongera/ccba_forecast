@@ -75,6 +75,7 @@ class ForecastModelSerializer(serializers.ModelSerializer):
 
 class ForecastSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
+    product_sku = serializers.CharField(source="product.sku", read_only=True)
     region_name = serializers.CharField(source="region.name", read_only=True)
     algorithm = serializers.CharField(source="model_used.algorithm", read_only=True)
     deviation_pct = serializers.ReadOnlyField()
