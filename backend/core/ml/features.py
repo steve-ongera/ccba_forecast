@@ -41,6 +41,8 @@ def _sales_to_df(product_id=None, region_id=None, date_from=None, date_to=None):
     if df.empty:
         return df
     df["sales_date"] = pd.to_datetime(df["sales_date"])
+    df["unit_price"] = df["unit_price"].astype(float)
+    df["quantity_sold"] = df["quantity_sold"].astype(float)
     return df
 
 
@@ -52,6 +54,9 @@ def _weather_to_df(region_ids):
     if df.empty:
         return df
     df["weather_date"] = pd.to_datetime(df["weather_date"])
+    df["temperature"] = df["temperature"].astype(float)
+    df["rainfall"] = df["rainfall"].astype(float)
+    df["humidity"] = df["humidity"].astype(float)
     return df
 
 
@@ -97,6 +102,7 @@ def build_feature_dataframe(product_id=None, region_id=None, date_from=None, dat
     for col in ("temperature", "rainfall", "humidity"):
         sales_df[col] = sales_df.groupby("region_id")[col].transform(lambda s: s.fillna(s.mean()))
         sales_df[col] = sales_df[col].fillna(sales_df[col].mean())
+        sales_df[col] = sales_df[col].astype(float)
 
     holiday_dates = _holiday_dates()
     event_pairs = _event_date_region_pairs()

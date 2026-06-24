@@ -140,7 +140,7 @@ def generate_forecasts(product_id=None, region_id=None, horizon="weekly", algori
                 continue  # no history yet for this product/region pair
 
             row = _build_forecast_feature_row(feature_row, target_date, region.id)
-            X = pd.DataFrame([row[FEATURE_COLUMNS].to_dict()])
+            X = pd.DataFrame([row[FEATURE_COLUMNS].to_dict()]).astype(float)
             predicted = float(model.predict(X)[0])
             predicted = max(0, predicted)
 

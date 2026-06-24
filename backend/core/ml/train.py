@@ -43,8 +43,8 @@ def _prepare_dataset(product_id=None, region_id=None):
     if df.empty or len(df) < 30:
         raise ValueError("Not enough sales history to train a model (need at least 30 rows).")
 
-    X = df[FEATURE_COLUMNS].fillna(0)
-    y = df[TARGET_COLUMN]
+    X = df[FEATURE_COLUMNS].fillna(0).astype(float)
+    y = df[TARGET_COLUMN].astype(float)
     return train_test_split(X, y, test_size=0.2, shuffle=False)  # preserve time order
 
 
