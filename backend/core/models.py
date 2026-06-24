@@ -250,11 +250,27 @@ class Report(models.Model):
         PDF = "pdf", "PDF"
         EXCEL = "excel", "Excel"
 
+    class ReportType(models.TextChoices):
+        FORECAST = "forecast", "Forecast"
+        SALES = "sales", "Sales"
+        PERFORMANCE = "performance", "Performance"
+        RECOMMENDATIONS = "recommendations", "Recommendations"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        GENERATING = "generating", "Generating"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+
     title = models.CharField(max_length=200)
+    description = models.CharField(max_length=255, blank=True)
     report_format = models.CharField(max_length=10, choices=ReportFormat.choices, default=ReportFormat.PDF)
+    report_type = models.CharField(max_length=20, choices=ReportType.choices, default=ReportType.FORECAST)
+    status = models.CharField(max_length=15, choices=Status.choices, default=Status.PENDING)
     generated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="reports")
     file_path = models.CharField(max_length=255, blank=True)
     filters = models.JSONField(default=dict, blank=True)  # product/region/date-range used
+    error_message = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
